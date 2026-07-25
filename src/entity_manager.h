@@ -6,6 +6,7 @@
 
 #include "chunk_manager.h"
 #include "entity.h"
+#include "minilight.h"
 
 class EntityManager
 {
@@ -31,6 +32,7 @@ class EntityManager
         void Update(float delta_time);
         void RunPhysics(double &accumulator);
         void RenderEntities(const glm::mat4 &view, const glm::mat4 &proj);
+        Minilight* GetMinilightAt(glm::ivec3 voxel);
         void DestroyMinilightAt(glm::ivec3 voxel);
         bool DestroyItemNear(ItemID item_id, glm::vec3 position, float max_distance);
         void LoadInitialEntities();

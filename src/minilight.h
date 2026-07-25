@@ -7,7 +7,7 @@ struct MinilightData
 {
     size_t id = 0;
     glm::ivec3 voxel;
-    glm::vec3 normal;
+    glm::ivec3 normal;
 };
 
 class Minilight : public Entity
@@ -19,6 +19,7 @@ class Minilight : public Entity
         void Render(const glm::mat4 &view, const glm::mat4 &proj) override;
 
         glm::ivec3 GetVoxel();
+        glm::ivec3 GetNormal();
         MinilightData GetMinilightData();
 
     private:

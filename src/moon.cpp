@@ -287,6 +287,41 @@ void Moon::Update(double delta_time)
                 entity_manager_.AddEntity(dropped);
             }
 
+            // Destroy attached minilights
+            glm::ivec3 neighbors[] = {
+                selection_position + glm::ivec3{1, 0, 0}, // px
+                selection_position + glm::ivec3{-1, 0, 0}, // nx
+                selection_position + glm::ivec3{0, 0, 1}, // pz
+                selection_position + glm::ivec3{0, 0, -1}, // nz
+                selection_position + glm::ivec3{0, 1, 0}, // py
+                selection_position + glm::ivec3{0, -1, 0}, // ny
+            };
+            for (int i = 0; i < 6; i++)
+            {
+                auto neighbor = neighbors[i];
+                auto displacement = neighbor - selection_position;
+                if (chunk_manager_.GetBlockAt(neighbor) == BlockID::minilight)
+                {
+                    Minilight* minilight = entity_manager_.GetMinilightAt(neighbor);
+                    if (minilight->GetNormal() == displacement)
+                    {
+                        chunk_manager_.HandlePlayerModification(neighbor);
+                        entity_manager_.DestroyMinilightAt(neighbor);
+                        DroppedItem *dropped = new DroppedItem({
+                            .position = neighbor,
+                            .item = BlockIDToItemID(BlockID::minilight),
+                            .amount = 1
+                        });
+                        dropped->SetVelocity({
+                            RNG{}.Range(-1.0f, 1.0f),
+                            RNG{}.Range(0.5f, 1.0f),
+                            RNG{}.Range(-1.0f, 1.0f)
+                        });
+                        entity_manager_.AddEntity(dropped);
+                    }
+                }
+            }
+
             SoundSystem::PlayAt(SoundSystem::Sound::BLOCK_BREAK, selection_position);
             selection_block_.SetMineProgress(0);
         }

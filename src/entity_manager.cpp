@@ -433,6 +433,22 @@ void EntityManager::DestroyMinilightAt(glm::ivec3 voxel)
     }
 }
 
+Minilight* EntityManager::GetMinilightAt(glm::ivec3 voxel)
+{
+    for (auto it = entities_.begin(); it != entities_.end(); ++it)
+    {
+        Entity* entity = it->second;
+        if (entity->GetType() == EntityType::MINILIGHT)
+        {
+            Minilight* minilight = dynamic_cast<Minilight *>(entity);
+            if (minilight->GetVoxel() == voxel)
+                return minilight;
+        }
+    }
+
+    return nullptr;
+}
+
 bool EntityManager::DestroyItemNear(ItemID item_id, glm::vec3 position, float max_distance)
 {
     for (auto it = entities_.begin(); it != entities_.end(); ++it)

@@ -72,7 +72,7 @@ Minilight::Minilight(MinilightData data)
     };
 
     glm::mat4 model{1.0f};
-    model = glm::translate(model, voxel_center - (0.5f - thickness) * data.normal);
+    model = glm::translate(model, voxel_center - (0.5f - thickness) * glm::vec3{data.normal});
     if (normal_.x > 0)
         model = glm::rotate(model, glm::radians(90.0f), {0, 1, 0});
     else if (normal_.x < 0)
@@ -119,6 +119,11 @@ void Minilight::Render(const glm::mat4 &view, const glm::mat4 &proj)
 glm::ivec3 Minilight::GetVoxel()
 {
     return voxel_;
+}
+
+glm::ivec3 Minilight::GetNormal()
+{
+    return normal_;
 }
 
 MinilightData Minilight::GetMinilightData()
