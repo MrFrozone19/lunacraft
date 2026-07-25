@@ -9,14 +9,15 @@ Minilight::Minilight(MinilightData data)
     type_ = EntityType::MINILIGHT;
     voxel_ = data.voxel;
     position_ = glm::vec3{data.voxel};
+    next_position_ = position_;
+    prev_position_ = position_;
     normal_ = data.normal;
     can_be_damaged_ = false;
+    is_dead_ = false;
 
     // These are extents, not total lengths
     const float width = 1.0f / 6.0f;
     const float thickness = 1.0f / 64.0f;
-
-    glm::vec3 voxel_center = glm::vec3{data.voxel};
 
     glm::vec3 v_local_positions[] = {
         // Front
@@ -72,7 +73,7 @@ Minilight::Minilight(MinilightData data)
     };
 
     glm::mat4 model{1.0f};
-    model = glm::translate(model, voxel_center - (0.5f - thickness) * glm::vec3{data.normal});
+    model = glm::translate(model, position_ - (0.5f - thickness) * glm::vec3{data.normal});
     if (normal_.x > 0)
         model = glm::rotate(model, glm::radians(90.0f), {0, 1, 0});
     else if (normal_.x < 0)
