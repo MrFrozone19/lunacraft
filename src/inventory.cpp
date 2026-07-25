@@ -1,6 +1,5 @@
 
 #include "inventory.h"
-#include "crafting.h"
 
 Inventory::Inventory(bool is_creative)
 {
@@ -170,71 +169,86 @@ int Inventory::Add(ItemStack stack)
     return -1;
 }
 
-std::vector<std::pair<ItemID, int>> Inventory::GetRecipeMatch()
+std::optional<CraftingRecipe> Inventory::GetRecipeMatch()
 {
     auto recipes = GetCraftingRecipes();
-    // Trim assembler input
-    std::vector<ItemStack> trimmed_input;
-
-    // we build a bounding box and include all items in it, basically the same thing does Minecraft
-    int min_row = 2;
-    int max_row = 0;
-    int min_col = 2;
-    int max_col = 0;
-    bool done_box = false;
-
-    for (int row = 2; row >= 0; row--)
+    for (auto& recipe : recipes)
     {
-        for (int col = 2; col >= 0; col--)
+        bool match_found = true;
+
+        // Check for correct number of items
+        int input_count = 0;
+        int recipe_input_count = 0;
+        for (int i = 0; i < 9; i++)
         {
-            ItemStack input = assembler_input[row][col];
+            ItemStack& input = assembler_input[i / 3][i % 3];
+            if (input.item != ItemID::none)
+                input_count++;
 
-            if (!input.IsEmpty())
-            {
-                done_box = true;
-                min_row = std::min(min_row, row);
-                max_row = std::max(max_row, row);
-                min_col = std::min(min_col, col);
-                max_col = std::max(max_col, col);
-            }
-        }
-    }
-
-    if (done_box)
-    {
-        for (int row = min_row; row <= max_row; row++)
-        {
-            for (int col = min_col; col <= max_col; col++)
-            {
-                ItemStack input = assembler_input[row][col];
-                trimmed_input.push_back(input);
-            }
-        }
-    }
-
-    // Attempt to find match
-    for (auto recipe : recipes)
-    {
-        if (trimmed_input.size() != recipe.size() - 1)
-            continue;
-
-        bool match = true;
-        for (int i = 0; i < recipe.size() - 1; i++)
-        {
-            auto recipe_item = recipe[i + 1];
-            auto input_item = trimmed_input[i];
-            if (input_item.item != recipe_item.first || input_item.amount < recipe_item.second)
-            {
-                match = false;
-                break;
-            }
+            if (i < recipe.input.size() && recipe.input[i].first != ItemID::none)
+                recipe_input_count++;
         }
 
-        if (match)
-            return recipe;
+        if (input_count != recipe_input_count)
+        {
+            match_found = false;
+        }
+        else
+        {
+            if (recipe.order_matters)
+            {
+                bool input_found = false;
+                for (int i = 0; i < 9; i++)
+                {
+                    ItemStack input = assembler_input[i / 3][i % 3];
+                    input_found = input_found || input.item != ItemID::none;
+                    
+                    if (input_found)
+                    {
+                        int j = 0;
+                        while (i < 9 && j < recipe.input.size())
+                        {
+                            input = assembler_input[i / 3][i % 3];
+                            if (input.item != recipe.input[j].first || input.amount < recipe.input[j].second)
+                            {
+                                match_found = false;
+                                break;
+                            }
+                            i++;
+                            j++;
+                        }
+
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // This assumes no input is repeated, which is true for all existing recipes (7/25/26)
+                for (auto& [recipe_item, recipe_item_amount] : recipe.input)
+                {
+                    bool satisfied = false;
+                    for (int i = 0; i < 9; i++)
+                    {
+                        ItemStack input = assembler_input[i / 3][i % 3];
+                        if (input.item == recipe_item && input.amount >= recipe_item_amount)
+                            satisfied = true;
+                    }
+
+                    if (!satisfied)
+                    {
+                        match_found = false;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (match_found)
+            return {recipe};
     }
 
-    return {};
+    return std::nullopt;
 }
 
 bool ItemStack::IsEmpty()

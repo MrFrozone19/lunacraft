@@ -1511,7 +1511,7 @@ UIInventory::UIInventory()
         for (int col = 0; col < 3; col++)
         {
             float x = 1122 + (ASS_SLOT_SIZE + ASS_SLOT_MARGIN) * col;
-            float y = 682 + (ASS_SLOT_SIZE + ASS_SLOT_MARGIN) * row;
+            float y = (682 + (ASS_SLOT_SIZE + ASS_SLOT_MARGIN) * 2) - (ASS_SLOT_SIZE + ASS_SLOT_MARGIN) * row;
 
             auto &[slot_image, slot_amount] = assembler_input_slots_[row][col];
             slot_image.SetPosition({x, y});
@@ -1905,10 +1905,10 @@ void UIInventory::Update(Player *player)
             if (clicked_slot >= &inventory.assembler_input[0][0] && clicked_slot <= &inventory.assembler_input[3][3]) // Recompute output
             {
                 auto recipe = inventory.GetRecipeMatch();
-                if (recipe.empty())
+                if (!recipe)
                     inventory.assembler_output = {ItemID::none, 0};
                 else
-                    inventory.assembler_output = {recipe[0].first, recipe[0].second};
+                    inventory.assembler_output = {recipe->output.first, recipe->output.second};
 
                 auto icon = GetItemIcon(inventory.assembler_output.item);
                 assembler_output_slot_.first.LoadImage(icon.bytes, icon.width, icon.height, icon.num_channels, GL_NEAREST);
@@ -1920,72 +1920,66 @@ void UIInventory::Update(Player *player)
             
             if (clicked_slot == &inventory.assembler_output && !inventory.assembler_output.IsEmpty()) // Take item (if possible)
             {
-                auto recipe = inventory.GetRecipeMatch();
-                if (!recipe.empty())
+                auto recipe_match = inventory.GetRecipeMatch();
+                if (recipe_match)
                 {
+                    CraftingRecipe recipe = *recipe_match;
                     // We shouldn't do anything if the item can't actually be taken in some way
-                    if ((inventory.HasSpaceForItem(recipe[0].first) && Input::IsKeyHeld(GLFW_KEY_LEFT_SHIFT)) || inventory.held_stack.IsEmpty() || inventory.held_stack.item == recipe[0].first)
+                    if ((inventory.HasSpaceForItem(recipe.output.first) && Input::IsKeyHeld(GLFW_KEY_LEFT_SHIFT)) || inventory.held_stack.IsEmpty() || inventory.held_stack.item == recipe.output.first)
                     {
-                        int recipe_idx = 1;
-                        int min_row = 2;
-                        int max_row = 0;
-                        int min_col = 2;
-                        int max_col = 0;
-                        bool done_box = false;
-
-                        for (int row = 2; row >= 0; row--)
+                        if (recipe.order_matters)
                         {
-                            for (int col = 2; col >= 0; col--)
+                            // Find beginning of input
+                            int input_idx = 0;
+                            for (; input_idx < 9; input_idx++)
                             {
-                                ItemStack input = inventory.assembler_input[row][col];
+                                ItemStack& input = inventory.assembler_input[input_idx / 3][input_idx % 3];
+                                if (input.item != ItemID::none)
+                                    break;
+                            }
 
-                                if (!input.IsEmpty())
+                            // Consume
+                            for (int recipe_idx = 0; recipe_idx < recipe.input.size(); recipe_idx++, input_idx++)
+                            {
+                                ItemStack& input = inventory.assembler_input[input_idx / 3][input_idx % 3];
+                                input.amount -= recipe.input[recipe_idx].second;
+                                if (input.amount == 0)
+                                    input.item = ItemID::none;
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < 9; i++)
+                            {
+                                ItemStack& input = inventory.assembler_input[i / 3][i % 3];
+                                for (auto& [recipe_item, recipe_item_amount] : recipe.input)
                                 {
-                                    done_box = true;
-                                    min_row = std::min(min_row, row);
-                                    max_row = std::max(max_row, row);
-                                    min_col = std::min(min_col, col);
-                                    max_col = std::max(max_col, col);
+                                    // This assumes no input is repeated, which is true for all existing recipes (7/25/26)
+                                    if (input.item == recipe_item)
+                                        input.amount -= recipe_item_amount;
+
+                                    if (input.amount == 0)
+                                        input.item = ItemID::none;
                                 }
                             }
                         }
-
-                        if (done_box)
-                        {
-                            for (int row = min_row; row <= max_row; row++)
-                            {
-                                for (int col = min_col; col <= max_col; col++)
-                                {
-                                    ItemStack& input_stack = inventory.assembler_input[row][col];
-
-                                    int amount_to_take = recipe[recipe_idx].second;
-                                    input_stack.amount -= amount_to_take;
-                                    if (input_stack.amount < 1)
-                                        input_stack.item = ItemID::none;
-                                    recipe_idx++;
-                                    if (recipe_idx == recipe.size())
-                                        goto done_consuming_input;
-                                }
-                            }
-                        }
-
-                        done_consuming_input:
 
                         int added_slot_idx = -1;
                         if (Input::IsKeyHeld(GLFW_KEY_LEFT_SHIFT))
                         {
-                            added_slot_idx = inventory.Add({recipe[0].first, recipe[0].second});
+                            added_slot_idx = inventory.Add({recipe.output.first, recipe.output.second});
                         }
                         else if (inventory.held_stack.IsEmpty()) // Put output in hand
                         {
-                            inventory.held_stack = {recipe[0].first, recipe[0].second};
+                            inventory.held_stack = {recipe.output.first, recipe.output.second};
                         }
                         else // Already holding output item
                         {
-                            inventory.held_stack.amount += recipe[0].second;
+                            inventory.held_stack.amount += recipe.output.second;
                         }
 
-                        if (inventory.GetRecipeMatch().empty())
+                        // Reset output if no more can be crafted
+                        if (!inventory.GetRecipeMatch())
                             inventory.assembler_output = {ItemID::none, 0};
                         
                         SoundSystem::Play(SoundSystem::Sound::CRAFT);
@@ -2205,7 +2199,7 @@ ItemStack *UIInventory::GetSlotUnderMouse(glm::dvec2 mouse_pos, Inventory &inven
             for (int col = 0; col < 3; col++)
             {
                 float x = 1122 + (76 + 13) * col;
-                float y = 682 + (76 + 13) * row;
+                float y = (682 + (76 + 13) * 2) - (76 + 13) * row;
                 if (mouse_pos.x >= x && mouse_pos.x <= x + 76 && mouse_pos.y >= y && mouse_pos.y <= y + 76)
                 {
                     *out_slot = &assembler_input_slots_[row][col];

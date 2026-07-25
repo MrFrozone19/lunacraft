@@ -4,278 +4,333 @@
 
 #include "item.h"
 
-inline std::vector<std::vector<std::pair<ItemID, int>>> GetCraftingRecipes()
+struct CraftingRecipe
+{
+    std::pair<ItemID, int> output;
+    std::vector<std::pair<ItemID, int>> input;
+    bool order_matters;
+};
+
+inline std::vector<CraftingRecipe> GetCraftingRecipes()
 {
     static auto recipes = []()
     {
-        std::vector<std::vector<std::pair<ItemID, int>>> _recipes =
+        std::vector<CraftingRecipe> _recipes =
         {
             {
-                {ItemID::energy_orb, 1},
-                {ItemID::none, 0},          {ItemID::power_crystal, 1}, {ItemID::none, 0},
+                .output = {ItemID::energy_orb, 1},
+                .input = {{ItemID::none, 0},          {ItemID::power_crystal, 1}, {ItemID::none, 0},
                 {ItemID::power_crystal, 1}, {ItemID::neptunium, 1},     {ItemID::power_crystal, 1},
-                {ItemID::none, 0},          {ItemID::power_crystal, 1}, {ItemID::none, 0}
+                {ItemID::none, 0},          {ItemID::power_crystal, 1}, {ItemID::none, 0}},
+                .order_matters = true
             },
             {
-                {ItemID::power_crystal, 1},
-                {ItemID::boron_crystal, 1},   {ItemID::sulphur_crystal, 1}, {ItemID::boron_crystal, 1},
+                .output = {ItemID::power_crystal, 1},
+                .input = {{ItemID::boron_crystal, 1},   {ItemID::sulphur_crystal, 1}, {ItemID::boron_crystal, 1},
                 {ItemID::sulphur_crystal, 1}, {ItemID::boron_crystal, 1},   {ItemID::sulphur_crystal, 1},
-                {ItemID::boron_crystal, 1},   {ItemID::sulphur_crystal, 1}, {ItemID::boron_crystal, 1}
+                {ItemID::boron_crystal, 1},   {ItemID::sulphur_crystal, 1}, {ItemID::boron_crystal, 1}},
+                .order_matters = true
             },
             {
-                {ItemID::battery, 1},
-                {ItemID::aluminum, 1}, {ItemID::aluminum, 1}, {ItemID::aluminum, 1},
+                .output = {ItemID::battery, 1},
+                .input = {{ItemID::aluminum, 1}, {ItemID::aluminum, 1}, {ItemID::aluminum, 1},
                 {ItemID::light, 1},    {ItemID::light, 1},    {ItemID::light, 1},
-                {ItemID::aluminum, 1}, {ItemID::aluminum, 1}, {ItemID::aluminum, 1}
+                {ItemID::aluminum, 1}, {ItemID::aluminum, 1}, {ItemID::aluminum, 1}},
+                .order_matters = true
             },
             {
-                {ItemID::beacon, 1},
-                {ItemID::aluminum, 1}, {ItemID::chronobooster, 1},   {ItemID::aluminum, 1},
+                .output = {ItemID::beacon, 1},
+                .input = {{ItemID::aluminum, 1}, {ItemID::chronobooster, 1},   {ItemID::aluminum, 1},
                 {ItemID::aluminum, 1}, {ItemID::power_crystal, 1}, {ItemID::aluminum, 1},
-                {ItemID::aluminum, 1}, {ItemID::mechanism, 1},     {ItemID::aluminum, 1}
+                {ItemID::aluminum, 1}, {ItemID::mechanism, 1},     {ItemID::aluminum, 1}},
+                .order_matters = true
             },
             {
-                {ItemID::mechanism, 1},
-                {ItemID::aluminum, 1}, {ItemID::polymer, 1},  {ItemID::aluminum, 1},
+                .output = {ItemID::mechanism, 1},
+                .input = {{ItemID::aluminum, 1}, {ItemID::polymer, 1},  {ItemID::aluminum, 1},
                 {ItemID::polymer, 1},  {ItemID::aluminum, 1}, {ItemID::polymer, 1},
-                {ItemID::aluminum, 1}, {ItemID::polymer, 1},  {ItemID::aluminum, 1}
+                {ItemID::aluminum, 1}, {ItemID::polymer, 1},  {ItemID::aluminum, 1}},
+                .order_matters = true
             },
             {
-                {ItemID::drill_t1, 1},
-                {ItemID::mechanism, 1}, {ItemID::none, 0},     {ItemID::none, 0},
+                .output = {ItemID::drill_t1, 1},
+                .input = {{ItemID::mechanism, 1}, {ItemID::none, 0},     {ItemID::none, 0},
                 {ItemID::battery, 1},   {ItemID::aluminum, 1}, {ItemID::aluminum, 1},
-                {ItemID::mechanism, 1}, {ItemID::none, 0},     {ItemID::none, 0}
+                {ItemID::mechanism, 1}, {ItemID::none, 0},     {ItemID::none, 0}},
+                .order_matters = true
             },
             {
-                {ItemID::drill_t2, 1},
-                {ItemID::mechanism, 1},     {ItemID::none, 0},     {ItemID::none, 0},
+                .output = {ItemID::drill_t2, 1},
+                .input = {{ItemID::mechanism, 1},     {ItemID::none, 0},     {ItemID::none, 0},
                 {ItemID::power_crystal, 1}, {ItemID::titanium, 1}, {ItemID::titanium, 1},
-                {ItemID::mechanism, 1},     {ItemID::none, 0},     {ItemID::none, 0}
+                {ItemID::mechanism, 1},     {ItemID::none, 0},     {ItemID::none, 0}},
+                .order_matters = true
             },
             {
-                {ItemID::drill_t3, 1},
-                {ItemID::mechanism, 1},  {ItemID::none, 0},     {ItemID::none, 0},
+                .output = {ItemID::drill_t3, 1},
+                .input = {{ItemID::mechanism, 1},  {ItemID::none, 0},     {ItemID::none, 0},
                 {ItemID::energy_orb, 1}, {ItemID::notchium, 1}, {ItemID::notchium, 1},
-                {ItemID::mechanism, 1},  {ItemID::none, 0},     {ItemID::none, 0}
+                {ItemID::mechanism, 1},  {ItemID::none, 0},     {ItemID::none, 0}},
+                .order_matters = true
             },
             {
-                {ItemID::slug_pistol_t1, 1},
-                {ItemID::battery, 1}, {ItemID::magnet, 1}, {ItemID::aluminum, 1},
-                {ItemID::aluminum, 1}
+                .output = {ItemID::slug_pistol_t1, 1},
+                .input = {{ItemID::battery, 1}, {ItemID::magnet, 1}, {ItemID::aluminum, 1},
+                {ItemID::aluminum, 1}},
+                .order_matters = true
             },
             {
-                {ItemID::slug_pistol_t2, 1},
-                {ItemID::power_crystal, 1}, {ItemID::magnet, 1}, {ItemID::titanium, 1},
-                {ItemID::titanium, 1}
-            },
-            
-            {
-                {ItemID::slug_pistol_t3, 1},
-                {ItemID::energy_orb, 1}, {ItemID::magnet, 1}, {ItemID::notchium, 1},
-                {ItemID::notchium, 1}
+                .output = {ItemID::slug_pistol_t2, 1},
+                .input = {{ItemID::power_crystal, 1}, {ItemID::magnet, 1}, {ItemID::titanium, 1},
+                {ItemID::titanium, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::jetpack_t1, 1},
-                {ItemID::aluminum, 1}, {ItemID::aluminum, 1}, {ItemID::aluminum, 1},
+                .output = {ItemID::slug_pistol_t3, 1},
+                .input = {{ItemID::energy_orb, 1}, {ItemID::magnet, 1}, {ItemID::notchium, 1},
+                {ItemID::notchium, 1}},
+                .order_matters = true
+            },
+            
+            {
+                .output = {ItemID::jetpack_t1, 1},
+                .input = {{ItemID::aluminum, 1}, {ItemID::aluminum, 1}, {ItemID::aluminum, 1},
                 {ItemID::battery, 1},  {ItemID::battery, 1},  {ItemID::battery, 1},
-                {ItemID::aluminum, 1}, {ItemID::none, 0},     {ItemID::aluminum, 1}
+                {ItemID::aluminum, 1}, {ItemID::none, 0},     {ItemID::aluminum, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::jetpack_t2, 1},
-                {ItemID::titanium, 1},      {ItemID::titanium, 1},      {ItemID::titanium, 1},
+                .output = {ItemID::jetpack_t2, 1},
+                .input = {{ItemID::titanium, 1},      {ItemID::titanium, 1},      {ItemID::titanium, 1},
                 {ItemID::power_crystal, 1}, {ItemID::power_crystal, 1}, {ItemID::power_crystal, 1},
-                {ItemID::titanium, 1},      {ItemID::none, 0},          {ItemID::titanium, 1}
+                {ItemID::titanium, 1},      {ItemID::none, 0},          {ItemID::titanium, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::jetpack_t3, 1},
-                {ItemID::notchium, 1},   {ItemID::notchium, 1},   {ItemID::notchium, 1},
+                .output = {ItemID::jetpack_t3, 1},
+                .input = {{ItemID::notchium, 1},   {ItemID::notchium, 1},   {ItemID::notchium, 1},
                 {ItemID::energy_orb, 1}, {ItemID::energy_orb, 1}, {ItemID::energy_orb, 1},
-                {ItemID::notchium, 1},   {ItemID::none, 0},       {ItemID::notchium, 1}
+                {ItemID::notchium, 1},   {ItemID::none, 0},       {ItemID::notchium, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::camera, 1},
-                {ItemID::none, 0},   {ItemID::energy_orb, 1}, {ItemID::none, 0},
+                .output = {ItemID::camera, 1},
+                .input = {{ItemID::none, 0},   {ItemID::energy_orb, 1}, {ItemID::none, 0},
                 {ItemID::carbon, 1}, {ItemID::mechanism, 1}, {ItemID::carbon, 1},
-                {ItemID::carbon, 1}, {ItemID::mechanism, 1}, {ItemID::carbon, 1}
+                {ItemID::carbon, 1}, {ItemID::mechanism, 1}, {ItemID::carbon, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::medkit, 1},
-                {ItemID::aluminum, 1}, {ItemID::mechanism, 1}, {ItemID::aluminum, 1},
+                .output = {ItemID::medkit, 1},
+                .input = {{ItemID::aluminum, 1}, {ItemID::mechanism, 1}, {ItemID::aluminum, 1},
                 {ItemID::aluminum, 1}, {ItemID::biogel, 6},    {ItemID::aluminum, 1},
-                {ItemID::aluminum, 1}, {ItemID::aluminum, 1},  {ItemID::aluminum, 1}
+                {ItemID::aluminum, 1}, {ItemID::aluminum, 1},  {ItemID::aluminum, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::turret_t1, 1},
-                {ItemID::none, 0},     {ItemID::slug_pistol_t1, 1}, {ItemID::none, 0},
+                .output = {ItemID::turret_t1, 1},
+                .input = {{ItemID::none, 0},     {ItemID::slug_pistol_t1, 1}, {ItemID::none, 0},
                 {ItemID::titanium, 1}, {ItemID::battery, 1},        {ItemID::titanium, 1},
-                {ItemID::titanium, 1}, {ItemID::battery, 1},        {ItemID::titanium, 1}
+                {ItemID::titanium, 1}, {ItemID::battery, 1},        {ItemID::titanium, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::turret_t2, 1},
-                {ItemID::none, 0},    {ItemID::slug_pistol_t2, 1},   {ItemID::none, 0},
+                .output = {ItemID::turret_t2, 1},
+                .input = {{ItemID::none, 0},    {ItemID::slug_pistol_t2, 1},   {ItemID::none, 0},
                 {ItemID::polymer, 1}, {ItemID::power_crystal, 1},    {ItemID::polymer, 1},
-                {ItemID::polymer, 1}, {ItemID::power_crystal, 1},    {ItemID::polymer, 1}
+                {ItemID::polymer, 1}, {ItemID::power_crystal, 1},    {ItemID::polymer, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::turret_t3, 1},
-                {ItemID::none, 0},     {ItemID::slug_pistol_t3, 1}, {ItemID::none, 0},
+                .output = {ItemID::turret_t3, 1},
+                .input = {{ItemID::none, 0},     {ItemID::slug_pistol_t3, 1}, {ItemID::none, 0},
                 {ItemID::notchium, 1}, {ItemID::energy_orb, 1},     {ItemID::notchium, 1},
-                {ItemID::notchium, 1}, {ItemID::energy_orb, 1},     {ItemID::notchium, 1}
+                {ItemID::notchium, 1}, {ItemID::energy_orb, 1},     {ItemID::notchium, 1}},
+                .order_matters = true
             },
             
             {
-                {ItemID::chronobooster, 1},
-                {ItemID::none, 0},      {ItemID::xenostone, 1}, {ItemID::none, 0},
+                .output = {ItemID::chronobooster, 1},
+                .input = {{ItemID::none, 0},      {ItemID::xenostone, 1}, {ItemID::none, 0},
                 {ItemID::xenostone, 1}, {ItemID::mechanism, 1}, {ItemID::xenostone, 1},
-                {ItemID::none, 0},      {ItemID::xenostone, 1}, {ItemID::none, 0}
+                {ItemID::none, 0},      {ItemID::xenostone, 1}, {ItemID::none, 0}},
+                .order_matters = true
             },
             
             {
-                {ItemID::chronowinder, 1},
-                {ItemID::none, 0},         {ItemID::amethyst_ore, 8}, {ItemID::none, 0},
+                .output = {ItemID::chronowinder, 1},
+                .input = {{ItemID::none, 0},         {ItemID::amethyst_ore, 8}, {ItemID::none, 0},
                 {ItemID::amethyst_ore, 8}, {ItemID::mechanism, 1},    {ItemID::amethyst_ore, 8},
-                {ItemID::none, 0},         {ItemID::amethyst_ore, 8}, {ItemID::none, 0}
+                {ItemID::none, 0},         {ItemID::amethyst_ore, 8}, {ItemID::none, 0}},
+                .order_matters = true
             },
             
             {
-                {ItemID::minilight, 4},
-                {ItemID::light, 1}, {ItemID::adhesive, 1}
+                .output = {ItemID::minilight, 4},
+                .input = {{ItemID::light, 1}, {ItemID::adhesive, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::granite, 1},
-                {ItemID::sulphur_ore, 1}, {ItemID::feldspar, 1}
+                .output = {ItemID::granite, 1},
+                .input = {{ItemID::sulphur_ore, 1}, {ItemID::feldspar, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::granite, 1},
-                {ItemID::feldspar, 1}, {ItemID::sulphur_ore, 1}
+                .output = {ItemID::granite, 1},
+                .input = {{ItemID::feldspar, 1}, {ItemID::sulphur_ore, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::beryllium, 1},
-                {ItemID::sulphur_ore, 1}, {ItemID::chalchanthite, 1}
+                .output = {ItemID::beryllium, 1},
+                .input = {{ItemID::sulphur_ore, 1}, {ItemID::chalchanthite, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::beryllium, 1},
-                {ItemID::chalchanthite, 1}, {ItemID::sulphur_ore, 1}
+                .output = {ItemID::beryllium, 1},
+                .input = {{ItemID::chalchanthite, 1}, {ItemID::sulphur_ore, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::amethyst_ore, 1},
-                {ItemID::chalchanthite, 1}, {ItemID::feldspar, 1}
+                .output = {ItemID::amethyst_ore, 1},
+                .input = {{ItemID::chalchanthite, 1}, {ItemID::feldspar, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::amethyst_ore, 1},
-                {ItemID::feldspar, 1}, {ItemID::chalchanthite, 1}
+                .output = {ItemID::amethyst_ore, 1},
+                .input = {{ItemID::feldspar, 1}, {ItemID::chalchanthite, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::rock, 1},
-                {ItemID::calcite, 1}, {ItemID::graphite, 1}
+                .output = {ItemID::rock, 1},
+                .input = {{ItemID::calcite, 1}, {ItemID::graphite, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::rock, 1},
-                {ItemID::graphite, 1}, {ItemID::calcite, 1}
+                .output = {ItemID::rock, 1},
+                .input = {{ItemID::graphite, 1}, {ItemID::calcite, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::graphite, 1},
-                {ItemID::moon_bark, 1}, {ItemID::rock, 1}
+                .output = {ItemID::graphite, 1},
+                .input = {{ItemID::moon_bark, 1}, {ItemID::rock, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::graphite, 1},
-                {ItemID::rock, 1}, {ItemID::moon_bark, 1}
+                .output = {ItemID::graphite, 1},
+                .input = {{ItemID::rock, 1}, {ItemID::moon_bark, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::calcite, 1},
-                {ItemID::moon_bark, 1}, {ItemID::sand, 1}
+                .output = {ItemID::calcite, 1},
+                .input = {{ItemID::moon_bark, 1}, {ItemID::sand, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::calcite, 1},
-                {ItemID::sand, 1}, {ItemID::moon_bark, 1}
+                .output = {ItemID::calcite, 1},
+                .input = {{ItemID::sand, 1}, {ItemID::moon_bark, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::biogel, 10},
-                {ItemID::xenostone, 1}
+                .output = {ItemID::biogel, 10},
+                .input = {{ItemID::xenostone, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::xenostone, 1},
-                {ItemID::biogel, 10}
+                .output = {ItemID::xenostone, 1},
+                .input = {{ItemID::biogel, 10}},
+                .order_matters = false
             },
             
             {
-                {ItemID::sand, 2},
-                {ItemID::dirt, 1}, {ItemID::water, 1}
+                .output = {ItemID::sand, 2},
+                .input = {{ItemID::dirt, 1}, {ItemID::water, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::sand, 2},
-                {ItemID::water, 1}, {ItemID::dirt, 1}
+                .output = {ItemID::sand, 2},
+                .input = {{ItemID::water, 1}, {ItemID::dirt, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::adhesive, 3},
-                {ItemID::biogel, 1}, {ItemID::water, 1}
+                .output = {ItemID::adhesive, 3},
+                .input = {{ItemID::biogel, 1}, {ItemID::water, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::adhesive, 3},
-                {ItemID::water, 1}, {ItemID::biogel, 1}
+                .output = {ItemID::adhesive, 3},
+                .input = {{ItemID::water, 1}, {ItemID::biogel, 1}},
+                .order_matters = false
             },
             
             {
-                {ItemID::magnet, 1},
-                {ItemID::magnetite, 4}
+                .output = {ItemID::magnet, 1},
+                .input = {{ItemID::magnetite, 4}},
+                .order_matters = false
             },
             
             {
-                {ItemID::polymer, 1},
-                {ItemID::shale_gravel, 4}
+                .output = {ItemID::polymer, 1},
+                .input = {{ItemID::shale_gravel, 4}},
+                .order_matters = false
             },
             
             {
-                {ItemID::gold, 1},
-                {ItemID::gold_ore, 4}
+                .output = {ItemID::gold, 1},
+                .input = {{ItemID::gold_ore, 4}},
+                .order_matters = false
             },
             
             {
-                {ItemID::aluminum, 1},
-                {ItemID::aluminum_ore, 4}
+                .output = {ItemID::aluminum, 1},
+                .input = {{ItemID::aluminum_ore, 4}},
+                .order_matters = false
             },
             
             {
-                {ItemID::titanium, 1},
-                {ItemID::titanium_ore, 4}
+                .output = {ItemID::titanium, 1},
+                .input = {{ItemID::titanium_ore, 4}},
+                .order_matters = false
             },
             
             {
-                {ItemID::notchium, 1},
-                {ItemID::notchium_ore, 4}
+                .output = {ItemID::notchium, 1},
+                .input = {{ItemID::notchium_ore, 4}},
+                .order_matters = false
             },
             {
-                {ItemID::biogel, 1},
-                {ItemID::moon_leaf, 8}
+                .output = {ItemID::biogel, 1},
+                .input = {{ItemID::moon_leaf, 8}},
+                .order_matters = false
             },
             {
-                {ItemID::neptunium, 1},
-                {ItemID::blue_crystal, 16}
+                .output = {ItemID::neptunium, 1},
+                .input = {{ItemID::blue_crystal, 16}},
+                .order_matters = false
             }
         };
 
