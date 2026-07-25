@@ -252,16 +252,21 @@ int main()
                 if (ui_pause_menu.IsActive())
                 {
                     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                    SoundSystem::PauseSFX();
                 }
-                else if (!ui_inventory.IsActive())
+                else
                 {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    if (glfwRawMouseMotionSupported())
-                        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); // More natural mouse motion
+                    SoundSystem::ResumeSFX();
+                    if (!ui_inventory.IsActive())
+                    {
+                        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                        if (glfwRawMouseMotionSupported())
+                            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); // More natural mouse motion
 
-                    double x, y;
-                    glfwGetCursorPos(window, &x, &y);
-                    Input::SetMousePosition(x, y);
+                        double x, y;
+                        glfwGetCursorPos(window, &x, &y);
+                        Input::SetMousePosition(x, y);
+                    }
                 }
             }
 
@@ -394,15 +399,19 @@ int main()
                     game_state = GameState::MAIN_MENU;
                     continue;
                 }
-                else if (ui_pause_menu.ResumeClicked() && !ui_inventory.IsActive())
+                else if (ui_pause_menu.ResumeClicked())
                 {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    if (glfwRawMouseMotionSupported())
-                        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); // More natural mouse motion
+                    SoundSystem::ResumeSFX();
+                    if (!ui_inventory.IsActive())
+                    {
+                        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                        if (glfwRawMouseMotionSupported())
+                            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE); // More natural mouse motion
 
-                    double x, y;
-                    glfwGetCursorPos(window, &x, &y);
-                    Input::SetMousePosition(x, y);
+                        double x, y;
+                        glfwGetCursorPos(window, &x, &y);
+                        Input::SetMousePosition(x, y);
+                    }
                 }
             }
             else

@@ -55,6 +55,8 @@ class SoundSystem
         static void Stop(ActiveSound *active_sound);
         static void SetPlayerPosition(glm::vec3 position);
         static void SetPlayerOrientation(glm::vec3 forward, glm::vec3 up);
+        static void PauseSFX();
+        static void ResumeSFX();
 
     private:
         static bool IsMusic(Sound sound);

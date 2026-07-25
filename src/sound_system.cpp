@@ -148,3 +148,17 @@ bool SoundSystem::IsMusic(Sound sound)
 {
     return sound == Sound::SONG_1 || sound == Sound::SONG_2 || sound == Sound::SONG_3 || sound == Sound::SONG_4 || sound == Sound::SONG_5;
 }
+
+void SoundSystem::PauseSFX()
+{
+    for (auto active_sound : active_sounds_)
+        if (!IsMusic(active_sound->sound_id))
+            active_sound->source->Pause();
+}
+
+void SoundSystem::ResumeSFX()
+{
+    for (auto active_sound : active_sounds_)
+        if (!IsMusic(active_sound->sound_id) && active_sound->source->GetState() == Soundlib::SourceState::PAUSED)
+            active_sound->source->Play();
+}

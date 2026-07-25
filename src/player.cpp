@@ -242,7 +242,7 @@ void Player::Update(float delta_time)
                     jetpack_sound_ = SoundSystem::Play(SoundSystem::Sound::JETPACK, true);
             }
         }
-        else if (Input::IsKeyReleased(GLFW_KEY_SPACE) || jetpack_energy_ < 1)
+        else
         {
             time_since_started_flying_ = 0;
             is_flying_ = false;
@@ -274,6 +274,19 @@ void Player::Update(float delta_time)
                 selected_item.amount--;
                 if (selected_item.amount < 1)
                     selected_item = {ItemID::none, 0};
+            }
+        }
+    }
+    else
+    {
+        if (is_flying_)
+        {
+            is_flying_ = false;
+            time_since_started_flying_ = 0;
+            if (jetpack_sound_)
+            {
+                SoundSystem::Stop(jetpack_sound_);
+                jetpack_sound_ = nullptr;
             }
         }
     }
