@@ -1,6 +1,6 @@
 [Setup]
 AppName=Lunacraft
-AppVersion=1.0.1
+AppVersion=1.0.3
 DefaultDirName={pf}\Lunacraft
 DefaultGroupName=Lunacraft
 OutputDir=dist
