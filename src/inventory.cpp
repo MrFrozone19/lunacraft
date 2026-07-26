@@ -201,7 +201,7 @@ std::optional<CraftingRecipe> Inventory::GetRecipeMatch()
                 for (int i = 0; i < 9; i++)
                 {
                     ItemStack input = assembler_input[i / 3][i % 3];
-                    input_found = input_found || input.item != ItemID::none;
+                    input_found = input_found || input.item != ItemID::none || recipe.input.size() == 9;
                     
                     if (input_found)
                     {
@@ -209,7 +209,7 @@ std::optional<CraftingRecipe> Inventory::GetRecipeMatch()
                         while (i < 9 && j < recipe.input.size())
                         {
                             input = assembler_input[i / 3][i % 3];
-                            if (input.item != recipe.input[j].first || input.amount < recipe.input[j].second)
+                            if (input.item != recipe.input[j].first || (input.item != ItemID::none && input.amount < recipe.input[j].second))
                             {
                                 match_found = false;
                                 break;

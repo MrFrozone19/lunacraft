@@ -1931,20 +1931,26 @@ void UIInventory::Update(Player *player)
                         {
                             // Find beginning of input
                             int input_idx = 0;
-                            for (; input_idx < 9; input_idx++)
+                            if (recipe.input.size() < 9)
                             {
-                                ItemStack& input = inventory.assembler_input[input_idx / 3][input_idx % 3];
-                                if (input.item != ItemID::none)
-                                    break;
+                                for (; input_idx < 9; input_idx++)
+                                {
+                                    ItemStack& input = inventory.assembler_input[input_idx / 3][input_idx % 3];
+                                    if (input.item != ItemID::none)
+                                        break;
+                                }
                             }
 
                             // Consume
                             for (int recipe_idx = 0; recipe_idx < recipe.input.size(); recipe_idx++, input_idx++)
                             {
                                 ItemStack& input = inventory.assembler_input[input_idx / 3][input_idx % 3];
-                                input.amount -= recipe.input[recipe_idx].second;
-                                if (input.amount == 0)
-                                    input.item = ItemID::none;
+                                if (input.item != ItemID::none)
+                                {
+                                    input.amount -= recipe.input[recipe_idx].second;
+                                    if (input.amount <= 0)
+                                        input = {ItemID::none, 0};
+                                }
                             }
                         }
                         else
@@ -1958,8 +1964,8 @@ void UIInventory::Update(Player *player)
                                     if (input.item == recipe_item)
                                         input.amount -= recipe_item_amount;
 
-                                    if (input.amount == 0)
-                                        input.item = ItemID::none;
+                                    if (input.amount <= 0)
+                                        input = {ItemID::none, 0};
                                 }
                             }
                         }
