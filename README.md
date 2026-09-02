@@ -23,7 +23,7 @@ Lunacraft can be built and installed from source as follows:
 ```
 $ mkdir build
 $ cmake -S . -B build
-$ cmake --build build --config Release --parallel <# of jobs>
+$ cmake --build build --config Release --parallel
 $ sudo cmake --install build
 ```
 
