@@ -1,4 +1,8 @@
 
+<div align="center">
+	<img src="https://i.ibb.co/tps6ZctW/lunacraft-banner.png">
+</div>
+
 # Lunacraft
 
 Lunacraft is a Minecraft-style procedural voxel game, originally developed by Charlie Deck for iOS in 2012. The game was taken off the app store around 2016. This is a cross-platform recreation for PC that aims to be as faithful to the original as possible.
