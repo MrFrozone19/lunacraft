@@ -18,41 +18,33 @@ class Moon;
 
 struct BlockMemory
 {
-    BlockID *blocks;
-    bool in_use;
+    std::unique_ptr<BlockID[]> blocks;
     uint64_t owner; // Chunk ID
+    bool in_use;
 };
 
-struct ChunkTask
+using ChunkTaskFn = void (Chunk::*)();
+namespace ChunkTask
 {
-    static void (Chunk::*LOAD_BLOCKS)();
-    static void (Chunk::*BUILD_LIGHTMAP_INTERNAL)();
-    static void (Chunk::*BUILD_LIGHTMAP_EXTERNAL)();
-    static void (Chunk::*UPDATE_VERTEX_LIGHTING)();
-    static void (Chunk::*BUILD_VERTICES)();
-    static void (Chunk::*MARK_AS_CLEAN)();
-    static void (Chunk::*UNPIN_ALL_NEIGHBORS)();
-    static void (Chunk::*UNPIN_ADJACENT_NEIGHBORS)();
+    inline constexpr ChunkTaskFn LoadBlocks = &Chunk::LoadBlocks;
+    inline constexpr ChunkTaskFn BuildLightmapInternal = &Chunk::BuildLightmapInternal;
+    inline constexpr ChunkTaskFn BuildLightmapExternal = &Chunk::BuildLightmapExternal;
+    inline constexpr ChunkTaskFn UpdateVertexLighting = &Chunk::UpdateVertexLighting;
+    inline constexpr ChunkTaskFn BuildVertices = &Chunk::BuildVertices;
+    inline constexpr ChunkTaskFn MarkAsClean = &Chunk::MarkAsClean;
+    inline constexpr ChunkTaskFn UnpinAllNeighbors = &Chunk::UnpinAllNeighbors;
+    inline constexpr ChunkTaskFn UnpinAdjacentNeighbors = &Chunk::UnpinAdjacentNeighbors;
 };
 
 struct ChunkJob
 {
+    std::vector<void (Chunk::*)()> tasks;
     Chunk *chunk;
     bool requires_neighbors;
-    std::vector<void (Chunk::*)()> tasks;
 };
 
 class ChunkManager
 {
-    private:
-        int loaded_chunk_count_ = 0;
-        GLuint texture_atlas_;
-        std::vector<BlockMemory> block_memory_;
-        std::queue<ChunkJob> job_queue_;
-        std::vector<uint64_t> need_entities_;
-        std::unordered_map<uint64_t, Chunk *> chunks_;
-        ChunkWorkerPool *worker_pool_;
-
     public:
         ChunkManager() = default;
         ~ChunkManager();
@@ -84,4 +76,13 @@ class ChunkManager
 
     private:
         void ReuseBlockMemory(uint64_t chunk_id);
+
+    private:
+        int loaded_chunk_count_ = 0;
+        GLuint texture_atlas_;
+        std::vector<BlockMemory> block_memory_;
+        std::queue<ChunkJob> job_queue_;
+        std::vector<uint64_t> need_entities_;
+        std::unordered_map<uint64_t, std::unique_ptr<Chunk>> chunks_;
+        std::unique_ptr<ChunkWorkerPool> worker_pool_;
 };
