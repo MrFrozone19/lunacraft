@@ -289,6 +289,9 @@ class UIOptionsMenu
         UIText render_distance_;
         UISlider render_distance_slider_;
 
+        UIText fov_;
+        UISlider fov_slider_;
+
         UIText show_gui_;
         UIToggleButton show_gui_toggle_;
 
@@ -338,12 +341,17 @@ class UIResetMoonMenu
 class UIMainMenu
 {
     private:
+        enum class Screen { TITLE, MOON_SELECT };
+
+        Screen screen_ = Screen::TITLE;
         UIImage lunacraft_logo_;
         UIImage background_images_[5];
         int current_background_ = 0;
         float current_background_time_ = 0;
+        UIButton singleplayer_button_;
         UIButton moon_buttons_[4];
         UIButton reset_buttons_[4];
+        UIButton back_button_;
         UIButton options_button_;
         UIButton quit_button_;
         UIMoonSettingsMenu moon_settings_menu_;
@@ -353,6 +361,7 @@ class UIMainMenu
 
     public:
         UIMainMenu();
+        void ShowTitleScreen();
         void RefreshMoonButtonText();
         void ResetMoonSettings();
         void SetLoadProgressLevel(float progress);
@@ -362,6 +371,9 @@ class UIMainMenu
         std::pair<int, MoonSettings> GetMoonData();
         void Update(float delta_time);
         void Render(float delta_time);
+
+    private:
+        void SetScreen(Screen screen);
 };
 
 class UIPauseMenu
@@ -482,6 +494,7 @@ class UIGame
         UIInventory &GetInventoryUI();
         UIDeathScreen &GetDeathScreen();
         void SetAlert(std::string str);
+        void SetBanner(std::string str);
         void Update(float delta_time);
         void Render();
 
@@ -494,4 +507,7 @@ class UIGame
         UIText alert_;
         bool alert_active_ = false;
         float alert_time_ = 0;
+        UIText banner_;
+        bool banner_active_ = false;
+        float banner_time_ = 0;
 };

@@ -43,6 +43,10 @@ static Moon *moon = nullptr;
 
 void SetFullscreen(GLFWwindow *window, bool fullscreen);
 void LoadMoon(int moon_id, MoonSettings moon_settings);
+void ReturnToTitleScreen(UIMainMenu &ui_main_menu);
+
+// TEMP (music test): shown whenever an in-game song starts
+const std::string MUSIC_TEST_BANNER = "THE NEXT SONG WILL PLAY! HAVE FAITH!";
 
 int main()
 {
@@ -50,6 +54,7 @@ int main()
     OptionsManager::Init();
     bool fullscreen = OptionsManager::GetOptions().fullscreen;
     bool vsync = OptionsManager::GetOptions().vsync;
+    Viewport::SetFov(OptionsManager::GetOptions().fov);
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -121,7 +126,7 @@ int main()
 
     ShaderManager::CompileAllShaders();
     SoundSystem::Init();
-    SoundSystem::Play(SoundSystem::Sound::SONG_1);
+    SoundSystem::PlayThemeSong();
 
     UIRescale();
     UIMainMenu ui_main_menu;
@@ -173,6 +178,11 @@ int main()
             glfwSwapInterval((int)vsync);
         }
 
+        // FOV change
+        float new_fov = OptionsManager::GetOptions().fov;
+        if (new_fov != Viewport::GetFov())
+            Viewport::SetFov(new_fov);
+
         //
         // Main
         //
@@ -221,6 +231,12 @@ int main()
                     ui_main_menu.ResetMoonSettings();
                     moon_load_progress = 0;
                     ui_main_menu.SetLoadProgressLevel(0);
+
+                    // TEMP (music test): start a song immediately on entering the game
+                    SoundSystem::StopMusic();
+                    SoundSystem::PlayRandomSong();
+                    ui_game.SetBanner(MUSIC_TEST_BANNER);
+                    next_event_time = current_time + RNG{}.Range(8 * 60, 12 * 60);
                     game_state = GameState::IN_GAME;
                 }
             }
@@ -335,8 +351,7 @@ int main()
                     ui_pause_menu.SetActive(false);
                     ui_death_screen.SetActive(false);
                     ui_death_screen.ResetClickedOk();
-                    ui_main_menu.RefreshMoonButtonText();
-                    game_state = GameState::MAIN_MENU;
+                    ReturnToTitleScreen(ui_main_menu);
                     continue;
                 }
             }
@@ -346,15 +361,8 @@ int main()
             {
                 next_event_time = current_time + RNG{}.Range(8 * 60, 12 * 60); // Every 8-12 minutes
 
-                int song = RNG{}.Range(1, 4);
-                if (song == 1)
-                    SoundSystem::Play(SoundSystem::Sound::SONG_2);
-                else if (song == 2)
-                    SoundSystem::Play(SoundSystem::Sound::SONG_3);
-                else if (song == 3)
-                    SoundSystem::Play(SoundSystem::Sound::SONG_4);
-                else
-                    SoundSystem::Play(SoundSystem::Sound::SONG_5);
+                SoundSystem::PlayRandomSong();
+                ui_game.SetBanner(MUSIC_TEST_BANNER); // TEMP (music test)
 
                 if (RNG{}.Range(0, 1) == 0)
                     moon->SpawnEventEntities();
@@ -395,8 +403,7 @@ int main()
 
                     // Reset to main menu
                     ui_pause_menu.SetActive(false);
-                    ui_main_menu.RefreshMoonButtonText();
-                    game_state = GameState::MAIN_MENU;
+                    ReturnToTitleScreen(ui_main_menu);
                     continue;
                 }
                 else if (ui_pause_menu.ResumeClicked())
@@ -463,6 +470,16 @@ int main()
     glfwTerminate();
 
     return 0;
+}
+
+// Called after the moon has been unloaded
+void ReturnToTitleScreen(UIMainMenu &ui_main_menu)
+{
+    ui_main_menu.RefreshMoonButtonText();
+    ui_main_menu.ShowTitleScreen();
+    SoundSystem::StopMusic();
+    SoundSystem::PlayThemeSong();
+    game_state = GameState::MAIN_MENU;
 }
 
 void LoadMoon(int moon_id, MoonSettings moon_settings)

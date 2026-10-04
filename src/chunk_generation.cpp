@@ -10,6 +10,7 @@
 #include "helpers.h"
 #include "rng.h"
 #include "chunk_generation.h"
+#include "cave_generation.h"
 #include "moon.h"
 
 static void GenerateCrystal(BlockID *, RNG &, float, int, int, int, int, BlockID, int, int);
@@ -243,6 +244,12 @@ void GenerateChunk(BlockID *chunk, int chunk_x, int chunk_z, MoonSettings settin
             }
         }
     }
+
+    //
+    // Caves (carved before ores and blobs, which only fill solid blocks, so caves stay open)
+    //
+
+    CarveCaves(chunk, chunk_x, chunk_z, settings.seed);
 
     //
     // Dirt/gravel blobs

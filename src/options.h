@@ -11,6 +11,7 @@ struct Options
     bool show_debug_info = false;
     bool fullscreen = false;
     bool vsync = false;
+    float fov = 45.0f; // Keep new fields at the end so older options.dat files still load
 };
 
 class OptionsManager

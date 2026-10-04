@@ -21,6 +21,7 @@
 #include "options.h"
 #include "viewport.h"
 #include "rng.h"
+#include "constants.h"
 #include "inventory.h"
 #include "sound_system.h"
 #include "player.h"
@@ -69,10 +70,40 @@ glm::mat4 UIGetVirtualToWindow()
 
 UIMainMenu::UIMainMenu()
 {
-    // Lunacraft logo
+    // Lunacraft logo (positioned per screen in SetScreen)
     lunacraft_logo_.LoadImage(Storage::IMAGES / "lunacraft.png");
-    lunacraft_logo_.SetPosition({70, 875});
-    lunacraft_logo_.SetSize({859, 130});
+
+    // Sets up a button with its text centered on it
+    auto setup_button = [](UIButton &button, glm::vec2 position, glm::vec2 size, const char *image, const std::string &text, float font_size) {
+        button.SetSize(size);
+        button.SetPosition(position);
+        button.SetImage(Storage::IMAGES / "ui" / image);
+        glm::vec2 text_size = UIText::GetTextSizeInPixels(text, font_size);
+        button.GetText().SetPosition({
+            position.x + (size.x / 2.0f) - (text_size.x / 2.0f),
+            position.y + (size.y / 2.0f) - (text_size.y / 2.0f)
+        });
+        button.SetText(text, font_size, {0.0f, 0.0f, 0.0f, 1.0f});
+    };
+
+    //
+    // Title screen
+    //
+
+    setup_button(singleplayer_button_, {550, 500}, {820, 105}, "ui_button_1.png", "Singleplayer", 0.6f);
+    singleplayer_button_.SetClickAction([this]() { SetScreen(Screen::MOON_SELECT); });
+
+    setup_button(options_button_, {550, 370}, {390, 105}, "ui_button_3.png", "Options", 0.5f);
+    options_button_.SetClickAction([this]() { options_menu_.SetActive(true); });
+
+    setup_button(quit_button_, {980, 370}, {390, 105}, "ui_button_3.png", "Quit Game", 0.5f);
+
+    //
+    // Moon select screen
+    //
+
+    setup_button(back_button_, {765, 175}, {390, 105}, "ui_button_3.png", "Back", 0.6f);
+    back_button_.SetClickAction([this]() { SetScreen(Screen::TITLE); });
 
     // Background images
     int i = 1;
@@ -167,34 +198,29 @@ UIMainMenu::UIMainMenu()
         i++;
     }
 
-    // Options button
-    glm::vec2 options_button_position = {785, 175};
-    glm::vec2 options_button_size = {390, 105};
-    float options_font_size = 0.6f;
-    options_button_.SetSize(options_button_size);
-    options_button_.SetPosition(options_button_position);
-    options_button_.SetImage(Storage::IMAGES / "ui" / "ui_button_3.png");
-    glm::vec2 options_text_size = UIText::GetTextSizeInPixels("Options", options_font_size);
-    options_button_.GetText().SetPosition({
-        options_button_position.x + (options_button_size.x / 2.0f) - (options_text_size.x / 2.0f),
-        options_button_position.y + (options_button_size.y / 2.0f) - (options_text_size.y / 2.0f)
-    });
-    options_button_.SetText("Options", options_font_size, {0.0f, 0.0f, 0.0f, 1.0f});
-    options_button_.SetClickAction([this]() { options_menu_.SetActive(true); });
+    SetScreen(Screen::TITLE);
+}
 
-    // Quit button
-    glm::vec2 quit_button_position = {1195, 175};
-    glm::vec2 quit_button_size = {220, 105};
-    float quit_font_size = 0.6f;
-    quit_button_.SetSize(quit_button_size);
-    quit_button_.SetPosition(quit_button_position);
-    quit_button_.SetImage(Storage::IMAGES / "ui" / "ui_button_4.png");
-    glm::vec2 quit_text_size = UIText::GetTextSizeInPixels("Quit", quit_font_size);
-    quit_button_.GetText().SetPosition({
-        quit_button_position.x + (quit_button_size.x / 2.0f) - (quit_text_size.x / 2.0f),
-        quit_button_position.y + (quit_button_size.y / 2.0f) - (quit_text_size.y / 2.0f)
-    });
-    quit_button_.SetText("Quit", quit_font_size, {0.0f, 0.0f, 0.0f, 1.0f});
+void UIMainMenu::SetScreen(Screen screen)
+{
+    screen_ = screen;
+
+    // Big centered logo on the title screen, smaller in the corner when picking a moon
+    if (screen_ == Screen::TITLE)
+    {
+        lunacraft_logo_.SetSize({1078, 163});
+        lunacraft_logo_.SetPosition({(VIRTUAL_UI_WIDTH / 2.0f) - (1078 / 2.0f), 720});
+    }
+    else
+    {
+        lunacraft_logo_.SetSize({859, 130});
+        lunacraft_logo_.SetPosition({70, 875});
+    }
+}
+
+void UIMainMenu::ShowTitleScreen()
+{
+    SetScreen(Screen::TITLE);
 }
 
 void UIMainMenu::RefreshMoonButtonText()
@@ -305,14 +331,25 @@ void UIMainMenu::Update(float delta_time)
     }
     else if (!load_moon_menu_.IsActive()) // Player can't interact with buttons behind active menus
     {
-        for (UIButton& moon_button : moon_buttons_)
-            moon_button.Update();
+        if (screen_ == Screen::TITLE)
+        {
+            singleplayer_button_.Update();
+            options_button_.Update();
+            quit_button_.Update();
+        }
+        else // MOON_SELECT
+        {
+            for (UIButton& moon_button : moon_buttons_)
+                moon_button.Update();
 
-        for (UIButton& reset_button : reset_buttons_)
-            reset_button.Update();
+            for (UIButton& reset_button : reset_buttons_)
+                reset_button.Update();
 
-        options_button_.Update();
-        quit_button_.Update();
+            back_button_.Update();
+
+            if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
+                SetScreen(Screen::TITLE);
+        }
     }
 }
 
@@ -391,14 +428,22 @@ void UIMainMenu::Render(float delta_time)
 
     lunacraft_logo_.Render();
 
-    for (UIButton& moon_button : moon_buttons_)
-        moon_button.Render();
+    if (screen_ == Screen::TITLE)
+    {
+        singleplayer_button_.Render();
+        options_button_.Render();
+        quit_button_.Render();
+    }
+    else // MOON_SELECT
+    {
+        for (UIButton& moon_button : moon_buttons_)
+            moon_button.Render();
 
-    for (UIButton& reset_button : reset_buttons_)
-        reset_button.Render();
+        for (UIButton& reset_button : reset_buttons_)
+            reset_button.Render();
 
-    options_button_.Render();
-    quit_button_.Render();
+        back_button_.Render();
+    }
 
     ui_image_shader.SetFloat("u_darkness", 0.0f);
     if (moon_settings_menu_.IsActive())
@@ -853,8 +898,22 @@ UIOptionsMenu::UIOptionsMenu()
     render_distance_slider_.SetDiscrete(true);
     render_distance_slider_.SetPosition({bg_pos_x + option_text_align_x1 + 25, 440});
     render_distance_slider_.SetSize({240, 20});
-    render_distance_slider_.SetBounds({1.0f, 12.0f});
+    render_distance_slider_.SetBounds({1.0f, (float)MAX_RENDER_DISTANCE});
     render_distance_slider_.SetValue(current_options.render_distance);
+
+    // FOV
+    float fov_text_width = UIText::GetTextSizeInPixels("FOV:", option_font_size).x;
+    fov_.SetPosition({bg_pos_x + option_text_align_x1 - fov_text_width, 360});
+    fov_.SetText("FOV:");
+    fov_.SetFontSize(option_font_size);
+    fov_.SetColor({0.0f, 0.0f, 0.0f, 1.0f});
+
+    // FOV slider
+    fov_slider_.SetDiscrete(true);
+    fov_slider_.SetPosition({bg_pos_x + option_text_align_x1 + 25, 360});
+    fov_slider_.SetSize({240, 20});
+    fov_slider_.SetBounds({30.0f, 110.0f});
+    fov_slider_.SetValue(current_options.fov);
 
     // Show GUI
     float gui_text_width = UIText::GetTextSizeInPixels("Show GUI:", option_font_size).x;
@@ -934,6 +993,7 @@ UIOptionsMenu::UIOptionsMenu()
         new_options.music_volume = music_volume_slider_.GetValue();
         new_options.render_distance = render_distance_slider_.GetValue();
         new_options.sensitivity = sensitivity_slider_.GetValue();
+        new_options.fov = fov_slider_.GetValue();
         new_options.sfx_volume = sfx_volume_slider_.GetValue();
         new_options.show_debug_info = show_debug_toggle_.IsToggled();
         new_options.show_fog = show_fog_toggle_.IsToggled();
@@ -955,6 +1015,7 @@ void UIOptionsMenu::SetActive(bool status)
         music_volume_slider_.SetValue(options.music_volume);
         render_distance_slider_.SetValue(options.render_distance);
         sensitivity_slider_.SetValue(options.sensitivity);
+        fov_slider_.SetValue(options.fov);
         show_gui_toggle_.SetToggled(options.show_gui);
         show_fog_toggle_.SetToggled(options.show_fog);
         show_debug_toggle_.SetToggled(options.show_debug_info);
@@ -973,6 +1034,7 @@ void UIOptionsMenu::Update()
     music_volume_slider_.Update();
     sensitivity_slider_.Update();
     render_distance_slider_.Update();
+    fov_slider_.Update();
     show_gui_toggle_.Update();
     show_fog_toggle_.Update();
     show_debug_toggle_.Update();
@@ -984,6 +1046,7 @@ void UIOptionsMenu::Update()
     options.music_volume = music_volume_slider_.GetValue();
     options.render_distance = render_distance_slider_.GetValue();
     options.sensitivity = sensitivity_slider_.GetValue();
+    options.fov = fov_slider_.GetValue();
     options.show_gui = show_gui_toggle_.IsToggled();
     options.show_fog = show_fog_toggle_.IsToggled();
     options.show_debug_info = show_debug_toggle_.IsToggled();
@@ -1004,6 +1067,8 @@ void UIOptionsMenu::Render()
     sensitivity_slider_.Render();
     render_distance_.Render();
     render_distance_slider_.Render();
+    fov_.Render();
+    fov_slider_.Render();
     show_gui_.Render();
     show_gui_toggle_.Render();
     show_fog_.Render();
@@ -1344,6 +1409,9 @@ UIGame::UIGame()
     alert_.SetPosition({40, 400});
     alert_.SetFontSize(0.3f);
     alert_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+
+    banner_.SetFontSize(0.5f);
+    banner_.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 }
 
 UIPauseMenu &UIGame::GetPauseMenu()
@@ -1372,6 +1440,16 @@ void UIGame::SetAlert(std::string str)
     alert_active_ = true;
 }
 
+// Centered text along the top of the screen, shown for 10 seconds
+void UIGame::SetBanner(std::string str)
+{
+    glm::vec2 banner_size = UIText::GetTextSizeInPixels(str, 0.5f);
+    banner_.SetPosition({(VIRTUAL_UI_WIDTH / 2.0f) - (banner_size.x / 2.0f), VIRTUAL_UI_HEIGHT - 100});
+    banner_.SetText(str);
+    banner_active_ = true;
+    banner_time_ = 0;
+}
+
 void UIGame::Update(float delta_time)
 {
     if (alert_active_)
@@ -1384,6 +1462,13 @@ void UIGame::Update(float delta_time)
     {
         alert_time_ = 0;
     }
+
+    if (banner_active_)
+    {
+        banner_time_ += delta_time;
+        if (banner_time_ > 10.0f)
+            banner_active_ = false;
+    }
 }
 
 void UIGame::Render()
@@ -1392,6 +1477,9 @@ void UIGame::Render()
 
     if (alert_active_)
         alert_.Render();
+
+    if (banner_active_)
+        banner_.Render();
 
     if (OptionsManager::GetOptions().show_gui)
         crosshair_.Render();

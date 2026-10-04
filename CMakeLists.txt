@@ -61,6 +61,7 @@ set(LUNACRAFT_SOURCES
     src/chunk.cpp
     src/chunk_manager.cpp
     src/chunk_generation.cpp
+    src/cave_generation.cpp
     src/chunk_worker_pool.cpp
     src/simplex_noise.cpp
     src/entity_manager.cpp

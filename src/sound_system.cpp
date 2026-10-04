@@ -1,15 +1,23 @@
 
 #include <iostream>
 #include <vector>
+#include <filesystem>
+#include <algorithm>
 
 #include "sound_system.h"
 #include "storage.h"
 #include "constants.h"
+#include "rng.h"
 
 using Sound = SoundSystem::Sound;
 
+// Main theme, played when the game opens (file name without extension, inside the soundtrack folder)
+constexpr const char *THEME_SONG_NAME = "C418 - 0x10c";
+
 std::vector<ActiveSound *> SoundSystem::active_sounds_;
 std::unordered_map<Sound, Soundlib::Sound> SoundSystem::sound_map_;
+std::vector<std::unique_ptr<Soundlib::Sound>> SoundSystem::soundtrack_;
+int SoundSystem::theme_song_index_ = -1;
 float SoundSystem::sfx_volume_;
 float SoundSystem::music_volume_;
 
@@ -18,11 +26,7 @@ void SoundSystem::Init()
     Soundlib::Init();
     Soundlib::SetAttenuationModel(Soundlib::AttenuationModel::INVERSE_DISTANCE);
 
-    sound_map_[Sound::SONG_1].LoadSound((Storage::SOUNDS / "theme1.mp3").string());
-    sound_map_[Sound::SONG_2].LoadSound((Storage::SOUNDS / "theme2.mp3").string());
-    sound_map_[Sound::SONG_3].LoadSound((Storage::SOUNDS / "theme3.mp3").string());
-    sound_map_[Sound::SONG_4].LoadSound((Storage::SOUNDS / "theme4.mp3").string());
-    sound_map_[Sound::SONG_5].LoadSound((Storage::SOUNDS / "theme5.mp3").string());
+    LoadSoundtrack();
     sound_map_[Sound::ALIEN_JUMP].LoadSound((Storage::SOUNDS / "alienjump.wav").string());
     sound_map_[Sound::BLOCK_BREAK].LoadSound((Storage::SOUNDS / "blockbreak.wav").string());
     sound_map_[Sound::BLOCK_PLACE].LoadSound((Storage::SOUNDS / "blockplace.wav").string());
@@ -53,6 +57,7 @@ void SoundSystem::Exit()
         active_sound->source->Stop();
         delete active_sound;
     }
+    soundtrack_.clear();
 
     Soundlib::Exit();
 }
@@ -131,6 +136,81 @@ void SoundSystem::Stop(ActiveSound *active_sound)
     active_sound->source->Stop();
 }
 
+// Loads every song in the soundtrack folder, so new tracks can be dropped in without code changes
+void SoundSystem::LoadSoundtrack()
+{
+    std::filesystem::path soundtrack_dir = Storage::SOUNDS / "soundtrack";
+    if (!std::filesystem::is_directory(soundtrack_dir))
+    {
+        std::cerr << "Soundtrack folder not found: " << soundtrack_dir.string() << std::endl;
+        return;
+    }
+
+    std::vector<std::filesystem::path> song_paths;
+    for (const auto &entry : std::filesystem::directory_iterator(soundtrack_dir))
+    {
+        std::string extension = entry.path().extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+        if (entry.is_regular_file() && (extension == ".ogg" || extension == ".mp3" || extension == ".wav" || extension == ".flac"))
+            song_paths.push_back(entry.path());
+    }
+    std::sort(song_paths.begin(), song_paths.end());
+
+    for (const auto &song_path : song_paths)
+    {
+        auto song = std::make_unique<Soundlib::Sound>();
+        song->LoadSound(song_path.string());
+        if (song->GetError() != Soundlib::Error::NONE)
+        {
+            std::cerr << "Failed to load song: " << song_path.string() << std::endl;
+            continue;
+        }
+
+        if (song_path.stem() == THEME_SONG_NAME)
+            theme_song_index_ = (int)soundtrack_.size();
+        soundtrack_.push_back(std::move(song));
+    }
+}
+
+ActiveSound *SoundSystem::PlayMusic(const Soundlib::Sound &song, bool loop)
+{
+    if (active_sounds_.size() == ACTIVE_SOUND_LIMIT)
+        return nullptr;
+
+    auto source = new Soundlib::SoundSource(song);
+    source->SetPosition(Soundlib::GetListenerPosition());
+    source->SetRolloffFactor(0);
+    source->SetLooping(loop);
+    source->SetGain(music_volume_);
+    source->Play();
+
+    auto active_sound = new ActiveSound{source, Sound::MUSIC, true};
+    active_sounds_.push_back(active_sound);
+    return active_sound;
+}
+
+// Loops until StopMusic is called (e.g. when entering a moon)
+void SoundSystem::PlayThemeSong()
+{
+    if (theme_song_index_ >= 0)
+        PlayMusic(*soundtrack_[theme_song_index_], true);
+}
+
+// Any song in the soundtrack can be chosen, including the theme
+void SoundSystem::PlayRandomSong()
+{
+    if (!soundtrack_.empty())
+        PlayMusic(*soundtrack_[RNG{}.Range<size_t>(0, soundtrack_.size() - 1)]);
+}
+
+// Stops every playing song (finished sources are cleaned up by Update)
+void SoundSystem::StopMusic()
+{
+    for (auto active_sound : active_sounds_)
+        if (IsMusic(active_sound->sound_id))
+            active_sound->source->Stop();
+}
+
 void SoundSystem::SetPlayerPosition(glm::vec3 position)
 {
     Soundlib::SetListenerPosition({position.x, position.y, position.z});
@@ -146,7 +226,7 @@ void SoundSystem::SetPlayerOrientation(glm::vec3 forward, glm::vec3 up)
 
 bool SoundSystem::IsMusic(Sound sound)
 {
-    return sound == Sound::SONG_1 || sound == Sound::SONG_2 || sound == Sound::SONG_3 || sound == Sound::SONG_4 || sound == Sound::SONG_5;
+    return sound == Sound::MUSIC;
 }
 
 void SoundSystem::PauseSFX()
